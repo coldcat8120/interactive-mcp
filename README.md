@@ -62,7 +62,7 @@ close_tutoring()
 ### 1. 克隆并安装依赖
 
 ```bash
-git clone https://github.com/<your-name>/interactive-mcp.git
+git clone https://github.com/coldcat8120/interactive-mcp.git
 cd interactive-mcp
 pip install -r requirements.txt
 ```
