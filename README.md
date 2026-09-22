@@ -103,14 +103,27 @@ Any MCP client that supports stdio transport will work.
 
 ## Via ModelScope
 
-Found this project on [ModelScope](https://www.modelscope.cn/mcp/servers/coldcat120/interactive-mcp)? You still need to run it locally — this is a local-only MCP server.
+Found this project on [ModelScope](https://www.modelscope.cn/mcp/servers/coldcat120/interactive-mcp)? You still need to run it locally — this is a **local-only** MCP server.
 
-1. Clone the repo: `git clone https://github.com/coldcat8120/interactive-mcp.git`
-2. `pip install -r requirements.txt`
-3. Copy KaTeX assets into `static/katex/`
-4. **Change the `"args"` value in the ModelScope-provided MCP config to an absolute path** pointing to your local `server.py`, e.g.:
+1. Clone the repo locally:
+
+   ```bash
+   git clone https://github.com/coldcat8120/interactive-mcp.git
+   cd interactive-mcp
+   pip install -r requirements.txt
+   ```
+
+2. Copy KaTeX assets into `static/katex/` (see [Installation](#installation) above).
+
+3. **Change the `"args"` value in the MCP config shown on ModelScope to an absolute path** pointing to your local `server.py`:
+
    ```json
    "args": ["C:\\Users\\you\\interactive-mcp\\server.py"]
+   ```
+
+4. Paste the modified config into your MCP client (Cherry Studio, Claude Desktop, Cursor, etc.).
+
+See [Installation](#installation) for details.
 
 ## Usage
 
