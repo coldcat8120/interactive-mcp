@@ -99,6 +99,31 @@ pip install -r requirements.txt
 
 其他框架同理——任何支持 stdio 传输的 MCP 客户端都能直接连接。
 
+## 通过魔搭使用
+
+如果你是在 [魔搭 MCP 广场](https://www.modelscope.cn/mcp/servers/coldcat120/interactive-mcp) 上发现这个项目的——它仍然需要**本地运行**，这是一个"仅本地可用"的 MCP 服务。
+
+1. 把仓库克隆到本地：
+
+   ```bash
+   git clone https://github.com/coldcat8120/interactive-mcp.git
+   cd interactive-mcp
+   pip install -r requirements.txt
+   ```
+
+2. 把 KaTeX 资源放入 `static/katex/` 目录（详见上方"安装"章节）。
+
+3. **把魔搭页面上那段 MCP 配置里的 `"args"` 值改成你本地的绝对路径**：
+
+   ```json
+   "args": ["C:\\Users\\你的用户名\\interactive-mcp\\server.py"]
+   ```
+
+4. 把修改后的配置粘贴到你的 MCP 客户端（Cherry Studio、Claude Desktop、Cursor 等）。
+
+更多细节见上方"安装"章节。
+
+
 ## 使用
 
 在 Agent 对话里说：
