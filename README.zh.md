@@ -107,15 +107,13 @@ pip install -r requirements.txt
    pip install -r requirements.txt
    ```
 
-2. 把 KaTeX 资源放入 `static/katex/` 目录（详见上方"安装"章节）。
-
-3. **把魔搭页面上那段 MCP 配置里的 `"args"` 值改成你本地的绝对路径**：
+2. **把魔搭页面上那段 MCP 配置里的 `"args"` 值改成你本地的绝对路径**：
 
    ```json
    "args": ["C:\\Users\\你的用户名\\interactive-mcp\\server.py"]
    ```
 
-4. 把修改后的配置粘贴到你的 MCP 客户端（Cherry Studio、Claude Desktop、Cursor 等）。
+3. 把修改后的配置粘贴到你的 MCP 客户端（Cherry Studio、Claude Desktop、Cursor 等）。
 
 更多细节见上方"安装"章节。
 
