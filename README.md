@@ -5,7 +5,6 @@
 [![lint](https://github.com/coldcat8120/interactive-mcp/actions/workflows/lint.yml/badge.svg)](https://github.com/coldcat8120/interactive-mcp/actions/workflows/lint.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-中文 | English
 
 [中文](README.zh.md) | **English**
 
