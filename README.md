@@ -101,6 +101,17 @@ Example for **OpenCode** (`~/.config/opencode/opencode.jsonc`):
 
 Any MCP client that supports stdio transport will work.
 
+## Via ModelScope
+
+Found this project on [ModelScope](https://www.modelscope.cn/mcp/servers/coldcat120/interactive-mcp)? You still need to run it locally — this is a local-only MCP server.
+
+1. Clone the repo: `git clone https://github.com/coldcat8120/interactive-mcp.git`
+2. `pip install -r requirements.txt`
+3. Copy KaTeX assets into `static/katex/`
+4. **Change the `"args"` value in the ModelScope-provided MCP config to an absolute path** pointing to your local `server.py`, e.g.:
+   ```json
+   "args": ["C:\\Users\\you\\interactive-mcp\\server.py"]
+
 ## Usage
 
 In the agent chat, say:
