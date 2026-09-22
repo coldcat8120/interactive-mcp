@@ -13,7 +13,7 @@
 - **单一 LLM**：没有任何"第二个大脑"，全部推理由调用方框架完成
 - **LaTeX 渲染**：黑板和对话区都支持数学公式（KaTeX）
 - **流式书写 + 可调速**：板书逐块出现，速度可调
-- **语音输入 / 朗读**（可选）：ASR / TTS 用户自行配置
+- **语音输入 / 朗读**（可选）：ASR / TTS 用户自行配置，未配置时自动降级
 
 ## 工作原理
 
@@ -30,7 +30,7 @@
 │  │ Broker (aiohttp)    │    │
 │  │  - 弹窗 + WebSocket │    │
 │  │  - 流式推送          │    │
-│  │  - 音频转写代理      │    │
+│  │  - ASR / TTS 代理    │    │
 │  └─────────────────────┘    │
 └──────────┬──────────────────┘
            │ WebSocket
@@ -104,17 +104,17 @@ pip install -r requirements.txt
 
 ## 配置（可选）
 
-### ASR 语音输入
+窗口右上角点击 **`⚙️ 语音`** 展开设置面板，内含 ASR 和 TTS 两组配置。所有配置仅存于浏览器 localStorage，**未配置时功能会自动降级，不会崩溃**。
 
-窗口右上角点击 `⚙️ ASR`，填入任意 OpenAI 兼容的 `/audio/transcriptions` 端点：
+### 🎤 ASR — 语音输入
+
+填入任意 OpenAI 兼容的 `/audio/transcriptions` 端点：
 
 | 服务 | URL | 模型 |
 |---|---|---|
 | 本地 llama.cpp + Qwen3-ASR | `http://127.0.0.1:8082` | `qwen3-asr` |
 | OpenAI Whisper | `https://api.openai.com/v1` | `whisper-1` |
 | 硅基流动 / Groq | 各家 base_url | 各家模型 ID |
-
-配置仅存于浏览器 localStorage。**未配置时点 🎤 只会提示，不会崩溃。**
 
 本地 Qwen3-ASR 部署（llama.cpp）：
 
@@ -125,9 +125,23 @@ llama-server \
   --port 8082
 ```
 
-### TTS 朗读
+**Broker 会用 ffmpeg 把浏览器录音转成 16kHz 单声道 WAV 再转发**，所以需要系统装了 ffmpeg（Windows 上 `ffprobe` 单独存在也可以）。
 
-使用浏览器内置 `SpeechSynthesis`，无需配置。默认开启，可点 `🔊` 关闭。
+未配置时点 🎤 只会提示并展开设置面板，不会崩溃。
+
+### 🔊 TTS — 语音朗读
+
+填入任意 OpenAI 兼容的 `/audio/speech` 端点：
+
+| 服务 | URL | 模型 | 音色 |
+|---|---|---|---|
+| OpenAI | `https://api.openai.com/v1` | `tts-1` | `alloy` / `nova` / … |
+| 硅基流动 | `https://api.siliconflow.cn/v1` | `FunAudioLLM/CosyVoice2-0.5B` | `claire` / … |
+| 本地 TTS | `http://127.0.0.1:8083` | 依服务而定 | 依服务而定 |
+
+**留空则使用浏览器内置 SpeechSynthesis**（音色有限但无需配置）。
+
+配置了服务端 TTS 时优先使用服务端；服务端失败会自动回退浏览器，讲解不中断。
 
 ## 设计哲学
 
@@ -158,7 +172,7 @@ LLM 生成结构化图形时，SVG 是**唯一同时满足**以下条件的格�
 
 - **书写与朗读无法完全同步**：朗读约 5 字/秒，书写即使最慢也有 100+ 字符/秒。目前通过"默认放慢书写"来缓解
 - **SVG 内的 `<text>` 内容延迟朗读**：等 `</text>` 闭合后才读，不是字符级流式
-- **浏览器 TTS 音色受限**：仅有系统内置音色，效果因系统而异
+- **浏览器 TTS 音色受限**：仅有系统内置音色，效果因系统而异。建议配置服务端 TTS
 - **KaTeX 对 CJK 有限制**：公式内的中文需 `\text{}` 包裹，前端已做自动兜底
 
 ## 目录结构
@@ -166,8 +180,12 @@ LLM 生成结构化图形时，SVG 是**唯一同时满足**以下条件的格�
 ```
 interactive-mcp/
 ├── server.py              # MCP 工具定义（三工具循环）
-├── broker.py              # 常驻 Broker：窗口 + WebSocket + 流式 + ASR 代理
+├── broker.py              # 常驻 Broker：窗口 + WebSocket + 流式 + ASR/TTS 代理
 ├── requirements.txt       # mcp + aiohttp + httpx
+├── LICENSE                # MIT
+├── NOTICE                 # 第三方组件许可（KaTeX 等）
+├── docs/
+│   └── screenshot.png     # 截图
 └── static/
     ├── index.html         # 板书 + 对话 + KaTeX + TTS + ASR + 速度滑块
     └── katex/             # KaTeX 资源
