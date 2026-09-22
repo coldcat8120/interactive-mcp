@@ -1,5 +1,3 @@
-![screenshot](docs/screenshot.png)
-
 # interactive-mcp
 
 [![lint](https://github.com/coldcat8120/interactive-mcp/actions/workflows/lint.yml/badge.svg)](https://github.com/coldcat8120/interactive-mcp/actions/workflows/lint.yml)
@@ -7,6 +5,8 @@
 
 
 [中文](README.zh.md) | **English**
+
+<img src="docs/screenshot.png" alt="screenshot" width="720">
 
 An MCP skill that lets any MCP-capable agent framework **pop up a dedicated blackboard window** — the user watches the board being drawn and asks questions in the same window, powered by a single LLM throughout.
 
