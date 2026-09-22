@@ -2,6 +2,9 @@
 
 # interactive-mcp
 
+[![lint](https://github.com/coldcat8120/interactive-mcp/actions/workflows/lint.yml/badge.svg)](https://github.com/coldcat8120/interactive-mcp/actions/workflows/lint.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 让任何支持 MCP 的 Agent 框架，**主动弹出一个板书讲解窗口**——用户在独立窗口里边看板书边提问，全程只用一个 LLM。
 
 ## 这是什么
