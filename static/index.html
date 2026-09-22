@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<title>陪读学长</title>
+<link rel="icon" href="data:," />
+<link rel="stylesheet" href="/static/katex/katex.min.css" />
+<script src="/static/katex/katex.min.js"></script>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; height: 100vh; display: flex; overflow: hidden;
+    font-family: system-ui, -apple-system, "Microsoft YaHei", sans-serif;
+    background: #1a1a2e; color: #eee;
+  }
+  #chat { flex: 1; display: flex; flex-direction: column; background: #1e1e2f; border-right: 1px solid #333; min-width: 300px; }
+  #log { flex: 1; overflow-y: auto; padding: 14px; line-height: 1.6; word-wrap: break-word; font-size: 0.95rem; }
+  .msg { margin-bottom: 10px; white-space: pre-wrap; }
+  .msg.user { color: #7ec8e3; }
+  .msg.assistant { color: #a8e6a3; }
+  .msg.system { color: #f0d080; font-size: 0.88em; opacity: 0.85; }
+  .msg.error { color: #e07070; }
+  .katex-block { display: block; text-align: center; margin: 6px 0; overflow-x: auto; }
+  .katex-inline { white-space: normal; }
+
+  #rate-bar {
+    padding: 6px 10px; display: flex; align-items: center; gap: 10px;
+    background: #151525; border-top: 1px solid #2a2a3a; font-size: 0.82rem; color: #888;
+  }
+  #rate-bar label { white-space: nowrap; }
+  #rate-slider { flex: 1; accent-color: #5a8a9a; cursor: pointer; }
+  #rate-value {
+    min-width: 34px; text-align: right; color: #7ec8e3; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  #rate-preset {
+    background: #2a2a3a; color: #ccc; border: 1px solid #444; border-radius: 6px;
+    padding: 3px 6px; font-size: 0.8rem; cursor: pointer;
+  }
+  #rate-preset:focus { outline: none; border-color: #6a8aaa; }
+  #svc-toggle {
+    background: transparent; border: 1px solid #444; color: #aaa;
+    border-radius: 6px; padding: 3px 10px; font-size: 0.8rem;
+    cursor: pointer; transition: all 0.15s;
+  }
+  #svc-toggle:hover { color: #eee; border-color: #6a8aaa; }
+  #svc-toggle.on { color: #7ec8e3; border-color: #4a7a9a; }
+
+  #svc-panel {
+    padding: 10px 12px; background: #12121f; border-top: 1px solid #2a2a3a;
+    display: none; flex-direction: column; gap: 8px; font-size: 0.82rem;
+    max-height: 45vh; overflow-y: auto;
+  }
+  #svc-panel.open { display: flex; }
+  #svc-panel .section-title {
+    color: #7ec8e3; font-weight: 600; font-size: 0.85rem;
+    padding: 4px 0; border-bottom: 1px solid #2a2a3a; margin-top: 4px;
+  }
+  #svc-panel .section-title:first-child { margin-top: 0; }
+  #svc-panel .row { display: flex; gap: 8px; align-items: center; }
+  #svc-panel label { color: #888; min-width: 70px; }
+  #svc-panel input {
+    flex: 1; padding: 5px 8px; border-radius: 6px; border: 1px solid #333;
+    background: #1e1e2f; color: #eee; font-size: 0.82rem; font-family: inherit;
+  }
+  #svc-panel input:focus { outline: none; border-color: #6a8aaa; }
+  #svc-panel .hint { color: #666; font-size: 0.75rem; padding-left: 78px; }
+  #svc-panel .actions { display: flex; gap: 8px; padding-left: 78px; }
+  #svc-panel button {
+    background: #3a5a7a; border: none; color: #fff; padding: 5px 12px;
+    border-radius: 6px; font-size: 0.8rem; cursor: pointer;
+  }
+  #svc-panel button:hover { background: #4a6a8a; }
+  #svc-status { color: #7ec8e3; font-size: 0.78rem; }
+
+  #input-area { padding: 10px; display: flex; gap: 6px; border-top: 1px solid #333; background: #1a1a2e; }
+  #input {
+    flex: 1; padding: 10px 12px; border-radius: 8px; border: 1px solid #444;
+    background: #2a2a3a; color: #eee; font-family: inherit; font-size: 0.95rem; resize: none;
+    min-height: 40px; max-height: 120px;
+  }
+  #input:focus { outline: none; border-color: #6a8aaa; }
+  button { padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 0.9rem; color: #fff; transition: background 0.15s; }
+  #send { background: #4a6a8a; }
+  #send:hover:not(:disabled) { background: #5a7a9a; }
+  #end { background: #a03a3a; }
+  #end:hover:not(:disabled) { background: #b04a4a; }
+  #tts { background: #4a7a4a; }
+  #tts:hover { background: #5a8a5a; }
+  #tts.off { background: #5a4a4a; }
+  #tts.off:hover { background: #6a5a5a; }
+  #mic { background: #5a4a7a; }
+  #mic:hover:not(:disabled) { background: #6a5a8a; }
+  #mic.recording { background: #a03a3a; animation: pulse 1s infinite alternate; }
+  @keyframes pulse { 0% { opacity: 0.7; } 100% { opacity: 1; } }
+  button:disabled { opacity: 0.4; cursor: not-allowed; }
+  #board-wrap { flex: 1.6; display: flex; flex-direction: column; padding: 12px; background: #1a1a2e; min-width: 400px; }
+  #board {
+    flex: 1; background: #173d23; border: 6px solid #6e4a2b; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; overflow: hidden;
+    box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+  }
+  #board svg { width: 100%; height: 100%; }
+  #board .placeholder { color: #4a6a54; font-size: 0.9rem; }
+  #board foreignObject div { color: inherit; }
+</style>
+</head>
+<body>
+<div id="chat">
+  <div id="log"></div>
+  <div id="rate-bar">
+    <label>✍️ 书写速度</label>
+    <input type="range" id="rate-slider" min="1" max="60" step="1" value="5" />
+    <span id="rate-value">5</span>
+    <select id="rate-preset" title="预设">
+      <option value="">预设…</option>
+      <option value="3">🐌 极慢 (3)</option>
+      <option value="5">🐢 慢 (5)</option>
+      <option value="15">🐇 正常 (15)</option>
+      <option value="30">⚡ 快 (30)</option>
+      <option value="60">🚀 极快 (60)</option>
+      <option value="0">💥 瞬显 (0)</option>
+    </select>
+    <button id="svc-toggle" title="语音服务配置（ASR + TTS）">⚙️ 语音</button>
+  </div>
+  <div id="svc-panel">
+    <div class="section-title">🎤 ASR — 语音输入（可选）</div>
+    <div class="row">
+      <label>ASR 端点</label>
+      <input type="text" id="asr-url" placeholder="https://api.openai.com/v1 或 http://127.0.0.1:8082" />
+    </div>
+    <div class="hint">OpenAI 兼容的 /audio/transcriptions 端点。本地 llama-server、OpenAI、硅基流动、Groq 等均可。</div>
+    <div class="row">
+      <label>模型名</label>
+      <input type="text" id="asr-model" placeholder="whisper-1（可选，某些服务不需要）" />
+    </div>
+    <div class="row">
+      <label>API Key</label>
+      <input type="password" id="asr-apikey" placeholder="（可选，本地服务一般不需要）" />
+    </div>
+
+    <div class="section-title">🔊 TTS — 语音朗读（可选）</div>
+    <div class="row">
+      <label>TTS 端点</label>
+      <input type="text" id="tts-url" placeholder="https://api.openai.com/v1 或 http://127.0.0.1:8083" />
+    </div>
+    <div class="hint">OpenAI 兼容的 /audio/speech 端点。留空则使用浏览器内置语音（音色有限但无需配置）。</div>
+    <div class="row">
+      <label>模型名</label>
+      <input type="text" id="tts-model" placeholder="tts-1（可选）" />
+    </div>
+    <div class="row">
+      <label>音色</label>
+      <input type="text" id="tts-voice" placeholder="alloy / zh-CN-XiaoxiaoNeural（依服务而定）" />
+    </div>
+    <div class="row">
+      <label>API Key</label>
+      <input type="password" id="tts-apikey" placeholder="（可选）" />
+    </div>
+
+    <div class="actions">
+      <button id="svc-save">保存配置</button>
+      <button id="svc-clear">清空</button>
+    </div>
+    <div id="svc-status"></div>
+  </div>
+  <div id="input-area">
+    <textarea id="input" rows="1" placeholder="输入问题，Enter 发送，Shift+Enter 换行…"></textarea>
+    <button id="mic" title="点击录音，再点结束">🎤</button>
+    <button id="send">发送</button>
+    <button id="tts">🔊 开</button>
+    <button id="end">结束</button>
+  </div>
+</div>
+<div id="board-wrap">
+  <div id="board"><span class="placeholder">等待板书…</span></div>
+</div>
+
+<script>
+const logEl = document.getElementById('log');
+const boardEl = document.getElementById('board');
+const inputEl = document.getElementById('input');
+const sendBtn = document.getElementById('send');
+const endBtn = document.getElementById('end');
+const ttsBtn = document.getElementById('tts');
+const micBtn = document.getElementById('mic');
+const rateSlider = document.getElementById('rate-slider');
+const rateValue = document.getElementById('rate-value');
+const ratePreset = document.getElementById('rate-preset');
+const svcToggle = document.getElementById('svc-toggle');
+const svcPanel = document.getElementById('svc-panel');
+const asrUrlEl = document.getElementById('asr-url');
+const asrModelEl = document.getElementById('asr-model');
+const asrKeyEl = document.getElementById('asr-apikey');
+const ttsUrlEl = document.getElementById('tts-url');
+const ttsModelEl = document.getElementById('tts-model');
+const ttsVoiceEl = document.getElementById('tts-voice');
+const ttsKeyEl = document.getElementById('tts-apikey');
+const svcSaveBtn = document.getElementById('svc-save');
+const svcClearBtn = document.getElementById('svc-clear');
+const svcStatusEl = document.getElementById('svc-status');
+
+const sessionId = new URLSearchParams(location.search).get('session') || 'default';
+let ws = null;
+
+// ============ 流式渲染状态 ============
+let currentRaw = '';
+let currentAssistantDiv = null;
+let lastSVGSource = null;
+let isStreaming = false;
+let ttsCursor = 0;
+
+// ===================== KaTeX 渲染 =====================
+function wrapChineseInLatex(tex) {
+  if (!tex) return tex;
+  const protecteds = [];
+  let s = tex.replace(/\\(text|mathrm|mathbf|mathit|mathsf|mathtt)\{[^{}]*\}/g, (m) => {
+    protecteds.push(m);
+    return '\uE001' + (protecteds.length - 1) + '\uE001';
+  });
+  s = s.replace(/[\u4e00-\u9fff]+/g, (m) => '\\text{' + m + '}');
+  s = s.replace(/\uE001(\d+)\uE001/g, (m, i) => protecteds[parseInt(i, 10)]);
+  return s;
+}
+
+function renderWithLatex(element, rawText) {
+  if (!rawText) { element.textContent = ''; return; }
+  if (typeof katex === 'undefined') { element.textContent = rawText; return; }
+  const PH = '\uE000';
+  const tokens = [];
+  let s = rawText;
+
+  s = s.replace(/\\\[([\s\S]+?)\\\]/g, (m, tex) => {
+    tokens.push({ block: true, tex: tex.trim() });
+    return PH + (tokens.length - 1) + PH;
+  });
+  s = s.replace(/\$\$([\s\S]+?)\$\$/g, (m, tex) => {
+    tokens.push({ block: true, tex: tex.trim() });
+    return PH + (tokens.length - 1) + PH;
+  });
+  s = s.replace(/\\\(([\s\S]+?)\\\)/g, (m, tex) => {
+    tokens.push({ block: false, tex: tex.trim() });
+    return PH + (tokens.length - 1) + PH;
+  });
+  s = s.replace(/\$\s*([\s\S]{1,500}?)\s*\$/g, (m, tex) => {
+    tokens.push({ block: false, tex: tex.trim() });
+    return PH + (tokens.length - 1) + PH;
+  });
+
+  element.innerHTML = '';
+  const parts = s.split(PH);
+  for (let i = 0; i < parts.length; i++) {
+    if (i % 2 === 0) {
+      if (parts[i]) element.appendChild(document.createTextNode(parts[i]));
+    } else {
+      const tok = tokens[parseInt(parts[i], 10)];
+      if (!tok) { element.appendChild(document.createTextNode(PH + parts[i] + PH)); continue; }
+      try {
+        const processedTex = wrapChineseInLatex(tok.tex);
+        const html = katex.renderToString(processedTex, {
+          displayMode: tok.block, throwOnError: false, errorColor: '#e07070'
+        });
+        const wrap = document.createElement('span');
+        wrap.className = tok.block ? 'katex-block' : 'katex-inline';
+        wrap.innerHTML = html;
+        element.appendChild(wrap);
+      } catch (e) {
+        element.appendChild(document.createTextNode((tok.block ? '$$' : '$') + tok.tex + (tok.block ? '$$' : '$')));
+      }
+    }
+  }
+}
+
+function looksLikeMath(txt) {
+  if (!txt) return false;
+  if (/\\[a-zA-Z]+/.test(txt)) return true;
+  if (/[A-Za-z0-9]\s*[\^_]\s*[A-Za-z0-9]/.test(txt)) return true;
+  return false;
+}
+
+function renderLatexInSVG(svgString) {
+  if (typeof katex === 'undefined' || !svgString || !svgString.startsWith('<svg')) return svgString;
+  let doc;
+  try { doc = new DOMParser().parseFromString(svgString, 'text/html'); }
+  catch (e) { return svgString; }
+  const svgEl = doc.querySelector('svg');
+  if (!svgEl) return svgString;
+
+  svgEl.querySelectorAll('text, tspan').forEach(node => {
+    const txt = node.textContent || '';
+    if (!txt.trim()) return;
+    let toRender = txt;
+    if (txt.includes('$') || txt.includes('\\(') || txt.includes('\\[')) {
+      // 已带分隔符
+    } else if (looksLikeMath(txt)) {
+      toRender = '$' + txt + '$';
+    } else {
+      return;
+    }
+    const x = node.getAttribute('x');
+    const y = node.getAttribute('y');
+    const fs = parseFloat(node.getAttribute('font-size') || '24');
+    const fill = node.getAttribute('fill') || '#e8e8e8';
+    const transform = node.getAttribute('transform');
+
+    const tmp = document.createElement('div');
+    renderWithLatex(tmp, toRender);
+
+    const fo = doc.createElementNS('http://www.w3.org/2000/svg', 'foreignObject');
+    if (x !== null) fo.setAttribute('x', x);
+    if (y !== null) fo.setAttribute('y', Math.max(0, parseFloat(y) - fs * 0.8));
+    if (transform) fo.setAttribute('transform', transform);
+    fo.setAttribute('width', Math.max(80, txt.length * fs * 0.62 + 60));
+    fo.setAttribute('height', fs * 2.6);
+
+    const div = doc.createElementNS('http://www.w3.org/1999/xhtml', 'div');
+    div.setAttribute('style', 'font-size:' + fs + 'px;color:' + fill + ';white-space:pre;line-height:1.3;');
+    while (tmp.firstChild) { div.appendChild(doc.importNode(tmp.firstChild, true)); tmp.removeChild(tmp.firstChild); }
+    fo.appendChild(div);
+    if (node.parentNode) node.parentNode.replaceChild(fo, node);
+  });
+  return new XMLSerializer().serializeToString(svgEl);
+}
+
+// ===================== 从累积原文提取 =====================
+function extractLastSVG(text) {
+  const i = text.lastIndexOf('<svg');
+  if (i === -1) return null;
+  const s = text.substring(i);
+  const j = s.lastIndexOf('</svg>');
+  if (j === -1) return s + '</svg>';
+  return s.substring(0, j + 6);
+}
+
+function extractChatText(text) {
+  return text
+    .replace(/<svg[\s\S]*?<\/svg>/g, '')
+    .replace(/<svg[\s\S]*$/g, '')
+    .replace(/```[a-zA-Z]*\s*/g, '')
+    .replace(/```\s*/g, '')
+    .replace(/<[^>]+>/g, '')
+    .replace(/\\n/g, '\n')
+    .replace(/\\t/g, '\t')
+    .trim();
+}
+
+// ===================== LaTeX 转朗读文本 =====================
+function latexToSpeech(tex) {
+  if (!tex) return '';
+  let s = tex;
+  for (let pass = 0; pass < 12; pass++) {
+    let changed = false;
+    s = s.replace(/\\frac\s*\{\s*([\s\S]*?)\s*\}\s*\{\s*([\s\S]*?)\s*\}/g, (m, a, b) => {
+      changed = true;
+      return latexToSpeech(b) + '分之' + latexToSpeech(a);
+    });
+    s = s.replace(/\\sqrt\s*\{\s*([\s\S]*?)\s*\}/g, (m, a) => {
+      changed = true;
+      return '根号' + latexToSpeech(a);
+    });
+    if (!changed) break;
+  }
+  s = s.replace(/\^(\{[^}]*\}|[A-Za-z0-9])/g, (m, exp) => {
+    exp = exp.replace(/^\{(.*)\}$/, '$1');
+    if (exp === '2') return '平方';
+    if (exp === '3') return '立方';
+    return '的' + latexToSpeech(exp) + '次方';
+  });
+  s = s.replace(/_(\{[^}]*\}|[A-Za-z0-9])/g, (m, sub) => {
+    sub = sub.replace(/^\{(.*)\}$/, '$1');
+    return '下标' + latexToSpeech(sub);
+  });
+  const map = {
+    '\\pi': '派', '\\times': '乘', '\\div': '除以', '\\pm': '正负',
+    '\\cdot': '乘', '\\leq': '小于等于', '\\le': '小于等于', '\\geq': '大于等于', '\\ge': '大于等于',
+    '\\neq': '不等于', '\\approx': '约等于',
+    '\\infty': '无穷', '\\sum': '求和', '\\int': '积分',
+    '\\sin': '正弦', '\\cos': '余弦', '\\tan': '正切',
+    '\\alpha': '阿尔法', '\\beta': '贝塔', '\\theta': '西塔', '\\lambda': '拉姆达',
+    '\\Delta': '德尔塔', '\\Sigma': '西格玛', '\\Omega': '欧米伽',
+    '\\rightarrow': '趋于', '\\to': '趋于', '\\Rightarrow': '推出',
+    '\\dots': '省略号', '\\cdots': '省略号',
+    '\\left': '', '\\right': '', '\\,': ' ', '\\;': ' ', '\\!': '',
+    '\\mathrm': '', '\\rm': '', '\\bf': '', '\\text': ''
+  };
+  for (const k in map) s = s.split(k).join(map[k]);
+  s = s.replace(/[{}]/g, '');
+  s = s.replace(/\\[a-zA-Z]+/g, '');
+  s = s.replace(/\\/g, '');
+  s = s.replace(/\s+/g, ' ').trim();
+  return s;
+}
+
+// ===================== Unicode 数学字符 + ASCII 朴素数学转朗读文本 =====================
+const SUP_DIGITS = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+const SUB_DIGITS = '₀₁₂₃₄₅₆₇₈₉';
+const CN_DIGITS = ['零','一','二','三','四','五','六','七','八','九'];
+
+function unicodeMathToSpeech(text) {
+  if (!text) return text;
+  const baseClass = '[A-Za-z0-9\\u4e00-\\u9fff]';
+
+  text = text.replace(new RegExp(baseClass + '²', 'g'), (m) => m[0] + ' 平方');
+  text = text.replace(new RegExp(baseClass + '³', 'g'), (m) => m[0] + ' 立方');
+  text = text.replace(new RegExp(baseClass + '([⁰¹⁴⁵⁶⁷⁸⁹]+)', 'g'), (m, sups) => {
+    const base = m[0];
+    const digits = sups.split('').map(c => {
+      const idx = SUP_DIGITS.indexOf(c);
+      return idx >= 0 ? CN_DIGITS[idx] : c;
+    }).join('');
+    return base + ' 的 ' + digits + ' 次方';
+  });
+  text = text.replace(/²/g, ' 平方');
+  text = text.replace(/³/g, ' 立方');
+  text = text.replace(/[⁰¹⁴⁵⁶⁷⁸⁹]/g, c => {
+    const idx = SUP_DIGITS.indexOf(c);
+    return idx >= 0 ? ' 的 ' + CN_DIGITS[idx] + ' 次方' : c;
+  });
+
+  text = text.replace(new RegExp(baseClass + '([₀₁₂₃₄₅₆₇₈₉]+)', 'g'), (m, subs) => {
+    const base = m[0];
+    const digits = subs.split('').map(c => {
+      const idx = SUB_DIGITS.indexOf(c);
+      return idx >= 0 ? CN_DIGITS[idx] : c;
+    }).join('');
+    return base + ' 下标 ' + digits;
+  });
+  text = text.replace(/[₀₁₂₃₄₅₆₇₈₉]/g, c => {
+    const idx = SUB_DIGITS.indexOf(c);
+    return idx >= 0 ? ' 下标 ' + CN_DIGITS[idx] : c;
+  });
+
+  text = text.replace(
+    /([A-Za-z0-9\)\]\u4e00-\u9fff])\^\((\d+)\)/g,
+    (m, base, num) => {
+      if (num === '2') return base + ' 平方';
+      if (num === '3') return base + ' 立方';
+      const digits = num.split('').map(d => CN_DIGITS[parseInt(d, 10)] || d).join('');
+      return base + ' 的 ' + digits + ' 次方';
+    }
+  );
+  text = text.replace(
+    /([A-Za-z0-9\)\]\u4e00-\u9fff])\^(\d+)/g,
+    (m, base, num) => {
+      if (num === '2') return base + ' 平方';
+      if (num === '3') return base + ' 立方';
+      const digits = num.split('').map(d => CN_DIGITS[parseInt(d, 10)] || d).join('');
+      return base + ' 的 ' + digits + ' 次方';
+    }
+  );
+  text = text.replace(/\^/g, ' ');
+
+  text = text.replace(/([A-Za-z0-9]+)\s*\/\s*([A-Za-z0-9]+)/g, '$1 除以 $2');
+
+  text = text.replace(/(^|[\s=([{,，、；;])[-−]\s*(\d+)/g, '$1 负 $2');
+
+  const symMap = {
+    '√': ' 根号 ', '∛': ' 立方根 ', '∑': ' 求和 ', '∏': ' 求积 ', '∫': ' 积分 ',
+    '∞': ' 无穷 ', '±': ' 正负 ', '∓': ' 负正 ', '×': ' 乘 ', '÷': ' 除以 ', '·': ' 乘 ',
+    '−': ' 负 ',
+    '≈': ' 约等于 ', '≠': ' 不等于 ', '≤': ' 小于等于 ', '≥': ' 大于等于 ',
+    '∠': ' 角 ', '°': ' 度 ', 'π': ' 派 ',
+    'α': ' 阿尔法 ', 'β': ' 贝塔 ', 'γ': ' 伽马 ', 'θ': ' 西塔 ',
+    'λ': ' 拉姆达 ', 'μ': ' 谬 ', 'φ': ' 斐 ',
+    'Δ': ' 德尔塔 ', 'Σ': ' 西格玛 ', 'Ω': ' 欧米伽 ',
+    '→': ' 趋于 ', '⇒': ' 推出 ', '⇔': ' 等价于 '
+  };
+  for (const k in symMap) text = text.split(k).join(symMap[k]);
+
+  return text;
+}
+
+// ===================== TTS 文本准备：保留 SVG 内文字，换行分段 =====================
+function cleanTextForTTS(rawContent) {
+  if (!rawContent) return '';
+
+  let text = rawContent.replace(/<svg[\s\S]*?<\/svg>/gi, (svg) => {
+    let s = svg;
+    for (const tag of ['style', 'script', 'defs', 'head', 'metadata']) {
+      s = s.replace(new RegExp('<' + tag + '[\\s\\S]*?</' + tag + '>', 'gi'), ' ');
+    }
+    const texts = [];
+    const re = /<(?:text|tspan)[^>]*>([\s\S]*?)<\/(?:text|tspan)>/g;
+    let m;
+    while ((m = re.exec(s)) !== null) {
+      const inner = m[1].replace(/<[^>]+>/g, '').trim();
+      if (inner) texts.push(inner);
+    }
+    return '\n' + texts.join('\n') + '\n';
+  });
+
+  const svgOpen = text.search(/<svg(?:\s|>)/i);
+  if (svgOpen !== -1) {
+    const before = text.slice(0, svgOpen);
+    const svgPartial = text.slice(svgOpen);
+    const texts = [];
+    const re = /<(?:text|tspan)[^>]*>([\s\S]*?)<\/(?:text|tspan)>/g;
+    let m;
+    while ((m = re.exec(svgPartial)) !== null) {
+      const inner = m[1].replace(/<[^>]+>/g, '').trim();
+      if (inner) texts.push(inner);
+    }
+    text = before + '\n' + texts.join('\n');
+  }
+
+  text = text.replace(/\\\[([\s\S]+?)\\\]/g, (m, tex) => ' ' + latexToSpeech(tex) + ' ');
+  text = text.replace(/\$\$([\s\S]+?)\$\$/g, (m, tex) => ' ' + latexToSpeech(tex) + ' ');
+  text = text.replace(/\\\(([\s\S]+?)\\\)/g, (m, tex) => ' ' + latexToSpeech(tex) + ' ');
+  text = text.replace(/\$([\s\S]{1,500}?)\$/g, (m, tex) => ' ' + latexToSpeech(tex) + ' ');
+
+  text = text.replace(/<[^>]+>/g, ' ');
+  text = text.replace(/```[a-zA-Z]*\s*/g, '').replace(/```\s*/g, '');
+  text = text.replace(/[*`_~#]/g, '');
+  text = text.replace(/\\n/g, '\n');
+
+  text = unicodeMathToSpeech(text);
+
+  text = text.replace(/([。！？；;])/g, '$1\x01');
+  text = text.replace(/\n/g, '\x01');
+
+  const segs = text.split('\x01').map(s => s.trim()).filter(Boolean);
+  return segs.join('[SEP]') + '[SEP]';
+}
+
+// ===================== TTS：服务端优先，浏览器兜底 =====================
+let ttsEnabled = true;
+const ttsQueue = [];
+let ttsSpeaking = false;
+let currentAudio = null;
+
+function loadTTSConfig() {
+  try {
+    const raw = localStorage.getItem('ttsConfig');
+    if (!raw) return { url: '', model: '', voice: '', api_key: '' };
+    const p = JSON.parse(raw);
+    return {
+      url: p.url || '',
+      model: p.model || '',
+      voice: p.voice || '',
+      api_key: p.api_key || '',
+    };
+  } catch (e) {
+    return { url: '', model: '', voice: '', api_key: '' };
+  }
+}
+
+function pickBrowserVoice() {
+  // 优先中文普通话，其次中文任意，最后默认
+  if (!('speechSynthesis' in window)) return null;
+  const voices = window.speechSynthesis.getVoices() || [];
+  if (!voices.length) return null;
+  return voices.find(v => v.lang === 'zh-CN')
+      || voices.find(v => v.lang && v.lang.startsWith('zh'))
+      || voices[0];
+}
+
+function speakBrowser(text) {
+  return new Promise((resolve) => {
+    if (!('speechSynthesis' in window)) { resolve(); return; }
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-CN';
+    u.rate = 0.95;
+    const v = pickBrowserVoice();
+    if (v) u.voice = v;
+    u.onend = () => resolve();
+    u.onerror = () => resolve();
+    try { window.speechSynthesis.resume(); } catch (e) {}
+    window.speechSynthesis.speak(u);
+  });
+}
+
+async function speakServer(text) {
+  const cfg = loadTTSConfig();
+  const resp = await fetch('/tts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, voice: cfg.voice || undefined }),
+  });
+  if (!resp.ok) {
+    let detail = resp.statusText;
+    try { const j = await resp.json(); detail = j.error || detail; } catch (e) {}
+    throw new Error(`TTS ${resp.status}: ${detail}`);
+  }
+  const blob = await resp.blob();
+  const url = URL.createObjectURL(blob);
+  return new Promise((resolve, reject) => {
+    const audio = new Audio(url);
+    currentAudio = audio;
+    audio.onended = () => { URL.revokeObjectURL(url); currentAudio = null; resolve(); };
+    audio.onerror = () => { URL.revokeObjectURL(url); currentAudio = null; reject(new Error('audio play error')); };
+    audio.play().catch(err => { URL.revokeObjectURL(url); currentAudio = null; reject(err); });
+  });
+}
+
+async function speakNext() {
+  if (ttsQueue.length === 0) { ttsSpeaking = false; return; }
+  ttsSpeaking = true;
+  const text = ttsQueue.shift();
+  if (!text) { speakNext(); return; }
+
+  const cfg = loadTTSConfig();
+  if (cfg.url) {
+    try {
+      await speakServer(text);
+      speakNext();
+      return;
+    } catch (e) {
+      console.warn('[TTS] 服务端失败，回退浏览器：', e.message);
+      // fall through to browser
+    }
+  }
+  await speakBrowser(text);
+  speakNext();
+}
+
+function enqueueTTS(text) {
+  if (!ttsEnabled || !text) return;
+  const cleaned = text.replace(/\[SEP\]/g, ' ').trim();
+  if (!cleaned) return;
+  ttsQueue.push(cleaned);
+  if (!ttsSpeaking) speakNext();
+}
+
+function stopTTS() {
+  try { window.speechSynthesis.cancel(); } catch (e) {}
+  if (currentAudio) {
+    try { currentAudio.pause(); currentAudio.src = ''; } catch (e) {}
+    currentAudio = null;
+  }
+  ttsQueue.length = 0;
+  ttsSpeaking = false;
+}
+
+ttsBtn.addEventListener('click', () => {
+  ttsEnabled = !ttsEnabled;
+  ttsBtn.textContent = ttsEnabled ? '🔊 开' : '🔇 关';
+  ttsBtn.classList.toggle('off', !ttsEnabled);
+  if (!ttsEnabled) stopTTS();
+});
+
+// 预加载浏览器语音列表
+if ('speechSynthesis' in window) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => {};
+}
+
+// ===================== 增量 TTS =====================
+function queueNewTTS(isFinal) {
+  if (!ttsEnabled || !currentRaw) return;
+  const ttsText = cleanTextForTTS(currentRaw);
+  if (ttsText.length <= ttsCursor) return;
+  const newPart = ttsText.substring(ttsCursor);
+  const segments = newPart.split('[SEP]');
+  const endsWithSep = newPart.endsWith('[SEP]');
+
+  for (let i = 0; i < segments.length; i++) {
+    const seg = segments[i].trim();
+    if (!seg) continue;
+    const isComplete = (i < segments.length - 1) || endsWithSep;
+    if (isComplete || isFinal) {
+      enqueueTTS(seg);
+    }
+  }
+
+  if (endsWithSep) {
+    ttsCursor = ttsText.length;
+  } else {
+    const lastSepIdx = ttsText.lastIndexOf('[SEP]');
+    if (lastSepIdx !== -1) ttsCursor = lastSepIdx + 5;
+  }
+}
+
+// ===================== 速率控制 =====================
+function sendRate(rate) {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'set_rate', rate }));
+  }
+}
+
+rateSlider.addEventListener('input', () => {
+  rateValue.textContent = rateSlider.value;
+});
+rateSlider.addEventListener('change', () => {
+  const r = parseInt(rateSlider.value, 10);
+  sendRate(r);
+  ratePreset.value = '';
+});
+
+ratePreset.addEventListener('change', () => {
+  const v = ratePreset.value;
+  if (v === '') return;
+  const r = parseInt(v, 10);
+  rateSlider.value = String(r);
+  rateValue.textContent = String(r);
+  sendRate(r);
+});
+
+// ===================== 语音服务配置（ASR + TTS） =====================
+function loadASRConfig() {
+  try {
+    const raw = localStorage.getItem('asrConfig');
+    if (!raw) return { url: '', model: '', api_key: '' };
+    return JSON.parse(raw);
+  } catch (e) {
+    return { url: '', model: '', api_key: '' };
+  }
+}
+
+function saveServiceConfig() {
+  const asr = {
+    url: asrUrlEl.value.trim(),
+    model: asrModelEl.value.trim(),
+    api_key: asrKeyEl.value.trim(),
+  };
+  const tts = {
+    url: ttsUrlEl.value.trim(),
+    model: ttsModelEl.value.trim(),
+    voice: ttsVoiceEl.value.trim(),
+    api_key: ttsKeyEl.value.trim(),
+  };
+  localStorage.setItem('asrConfig', JSON.stringify(asr));
+  localStorage.setItem('ttsConfig', JSON.stringify(tts));
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    ws.send(JSON.stringify({ type: 'set_asr_config', ...asr }));
+    ws.send(JSON.stringify({ type: 'set_tts_config', ...tts }));
+  }
+  const parts = [];
+  if (asr.url) parts.push('ASR ✅');
+  if (tts.url) parts.push('TTS ✅');
+  svcStatusEl.textContent = parts.length ? '已保存：' + parts.join('  ') : '已清空';
+  setTimeout(() => { svcStatusEl.textContent = ''; }, 3000);
+  updateServiceButtonState();
+}
+
+function initServicePanel() {
+  const asr = loadASRConfig();
+  const tts = loadTTSConfig();
+  asrUrlEl.value = asr.url || '';
+  asrModelEl.value = asr.model || '';
+  asrKeyEl.value = asr.api_key || '';
+  ttsUrlEl.value = tts.url || '';
+  ttsModelEl.value = tts.model || '';
+  ttsVoiceEl.value = tts.voice || '';
+  ttsKeyEl.value = tts.api_key || '';
+  updateServiceButtonState();
+}
+
+function updateServiceButtonState() {
+  const asr = loadASRConfig();
+  const tts = loadTTSConfig();
+  const on = !!(asr.url || tts.url);
+  svcToggle.classList.toggle('on', on);
+  const parts = [];
+  if (asr.url) parts.push('ASR');
+  if (tts.url) parts.push('TTS');
+  svcToggle.title = on ? `已配置：${parts.join(' + ')}（点此修改）` : '语音服务未配置（点此配置）';
+}
+
+svcToggle.addEventListener('click', () => {
+  svcPanel.classList.toggle('open');
+});
+svcSaveBtn.addEventListener('click', saveServiceConfig);
+svcClearBtn.addEventListener('click', () => {
+  asrUrlEl.value = '';
+  asrModelEl.value = '';
+  asrKeyEl.value = '';
+  ttsUrlEl.value = '';
+  ttsModelEl.value = '';
+  ttsVoiceEl.value = '';
+  ttsKeyEl.value = '';
+  saveServiceConfig();
+});
+
+// ===================== 麦克风录音 =====================
+let mediaRecorder = null;
+let audioChunks = [];
+let isRecording = false;
+
+function pickMimeType() {
+  const candidates = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
+  for (const c of candidates) {
+    if (typeof MediaRecorder !== 'undefined' && MediaRecorder.isTypeSupported(c)) return c;
+  }
+  return '';
+}
+
+async function startRecording() {
+  if (isRecording) return;
+  const cfg = loadASRConfig();
+  if (!cfg.url) {
+    appendMsg('system', '⚠️ 请先点右上角 ⚙️ 语音 配置 ASR 服务。', 'error');
+    svcPanel.classList.add('open');
+    return;
+  }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mimeType = pickMimeType();
+    mediaRecorder = mimeType
+      ? new MediaRecorder(stream, { mimeType })
+      : new MediaRecorder(stream);
+    audioChunks = [];
+    mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = async () => {
+      stream.getTracks().forEach(t => t.stop());
+      const blob = new Blob(audioChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+      isRecording = false;
+      micBtn.classList.remove('recording');
+      micBtn.textContent = '🎤';
+      if (blob.size === 0) return;
+      await transcribe(blob);
+    };
+    mediaRecorder.start();
+    isRecording = true;
+    micBtn.classList.add('recording');
+    micBtn.textContent = '⏹';
+  } catch (e) {
+    appendMsg('error', '麦克风访问失败: ' + e.message);
+  }
+}
+
+function stopRecording() {
+  if (mediaRecorder && isRecording) mediaRecorder.stop();
+}
+
+async function transcribe(blob) {
+  micBtn.disabled = true;
+  const orig = micBtn.textContent;
+  micBtn.textContent = '…';
+  try {
+    const form = new FormData();
+    const ext = (blob.type || '').includes('mp4') ? 'mp4'
+              : (blob.type || '').includes('ogg') ? 'ogg'
+              : 'webm';
+    form.append('file', blob, 'recording.' + ext);
+    const resp = await fetch('/transcribe', { method: 'POST', body: form });
+    const result = await resp.json();
+    if (!resp.ok) {
+      appendMsg('error', 'ASR 失败: ' + (result.error || resp.statusText));
+      return;
+    }
+    const text = (result.text || '').trim();
+    if (!text) {
+      appendMsg('system', '（未识别到语音内容）');
+      return;
+    }
+    inputEl.value = inputEl.value ? (inputEl.value + ' ' + text) : text;
+    inputEl.focus();
+  } catch (e) {
+    appendMsg('error', 'ASR 请求异常: ' + e.message);
+  } finally {
+    micBtn.disabled = false;
+    micBtn.textContent = orig === '…' ? '🎤' : orig;
+  }
+}
+
+micBtn.addEventListener('click', () => {
+  if (isRecording) stopRecording();
+  else startRecording();
+});
+
+// ===================== 流式渲染 =====================
+let renderScheduled = false;
+function scheduleRerender() {
+  if (renderScheduled) return;
+  renderScheduled = true;
+  requestAnimationFrame(() => {
+    renderScheduled = false;
+    rerenderCurrentReply();
+  });
+}
+
+function rerenderCurrentReply() {
+  if (!currentRaw) return;
+  const svg = extractLastSVG(currentRaw);
+  if (svg && svg !== lastSVGSource) {
+    try {
+      boardEl.innerHTML = renderLatexInSVG(svg);
+      lastSVGSource = svg;
+    } catch (e) {
+      console.warn('SVG 渲染失败（可能流式中间态）', e);
+    }
+  }
+  const text = extractChatText(currentRaw);
+  if (!currentAssistantDiv) {
+    currentAssistantDiv = document.createElement('div');
+    currentAssistantDiv.className = 'msg assistant';
+    logEl.appendChild(currentAssistantDiv);
+  }
+  renderWithLatex(currentAssistantDiv, text || '…');
+  logEl.scrollTop = logEl.scrollHeight;
+  queueNewTTS(false);
+}
+
+// ===================== 消息处理 =====================
+function appendMsg(role, text) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  renderWithLatex(div, text);
+  logEl.appendChild(div);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function beginStreaming() {
+  isStreaming = true;
+  currentRaw = '';
+  currentAssistantDiv = null;
+  lastSVGSource = null;
+  ttsCursor = 0;
+  sendBtn.disabled = true;
+}
+
+function endStreaming() {
+  isStreaming = false;
+  sendBtn.disabled = false;
+  queueNewTTS(true);
+  currentRaw = '';
+  currentAssistantDiv = null;
+  lastSVGSource = null;
+  ttsCursor = 0;
+}
+
+function handle(data) {
+  switch (data.type) {
+    case 'init':
+      appendMsg('system', `会话 ${data.session_id} 已启动，主题：${data.topic}`);
+      if (typeof data.stream_rate === 'number') {
+        rateSlider.value = String(data.stream_rate);
+        rateValue.textContent = String(data.stream_rate);
+      }
+      break;
+    case 'assistant_delta':
+      if (!isStreaming) beginStreaming();
+      currentRaw += data.content;
+      scheduleRerender();
+      break;
+    case 'assistant_done':
+      if (isStreaming) {
+        rerenderCurrentReply();
+        endStreaming();
+      }
+      break;
+    case 'session_ended':
+      appendMsg('system', '会话已结束，本窗口可以关闭。');
+      sendBtn.disabled = true;
+      endBtn.disabled = true;
+      break;
+  }
+}
+
+function connect() {
+  const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
+  ws = new WebSocket(`${proto}//${location.host}/ws?session=${encodeURIComponent(sessionId)}`);
+  ws.onopen = () => {
+    appendMsg('system', '已连接。');
+    sendRate(parseInt(rateSlider.value, 10));
+    const asr = loadASRConfig();
+    if (asr.url) ws.send(JSON.stringify({ type: 'set_asr_config', ...asr }));
+    const tts = loadTTSConfig();
+    if (tts.url) ws.send(JSON.stringify({ type: 'set_tts_config', ...tts }));
+  };
+  ws.onmessage = (e) => {
+    let data;
+    try { data = JSON.parse(e.data); } catch { return; }
+    handle(data);
+  };
+  ws.onclose = () => {
+    appendMsg('system', '连接已关闭。');
+    sendBtn.disabled = true;
+    endBtn.disabled = true;
+  };
+  ws.onerror = () => appendMsg('error', '连接错误');
+}
+
+function sendMessage() {
+  const content = inputEl.value.trim();
+  if (!content || !ws || ws.readyState !== WebSocket.OPEN) return;
+  appendMsg('user', content);
+  ws.send(JSON.stringify({ type: 'user_message', content }));
+  inputEl.value = '';
+}
+
+function endSession() {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
+  stopTTS();
+  ws.send(JSON.stringify({ type: 'end_session' }));
+  sendBtn.disabled = true;
+  endBtn.disabled = true;
+}
+
+sendBtn.addEventListener('click', sendMessage);
+endBtn.addEventListener('click', endSession);
+inputEl.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+window.addEventListener('beforeunload', () => { try { ws && ws.close(); } catch {} });
+
+initServicePanel();
+connect();
+</script>
+</body>
+</html>

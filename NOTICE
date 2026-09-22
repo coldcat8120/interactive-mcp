@@ -1,0 +1,31 @@
+# Third-Party Notices
+
+This project bundles or depends on the following third-party software.
+
+## KaTeX
+
+- Location: `static/katex/`
+- Project: https://katex.org/
+- License: MIT (Copyright Khan Academy)
+- Purpose: LaTeX math rendering in the blackboard and chat areas
+
+KaTeX is redistributed unmodified for offline use. Its fonts are covered by
+the KaTeX distribution's own licensing (see the KaTeX project for details).
+
+## mcp / FastMCP
+
+- Dependency: `mcp` (see `requirements.txt`)
+- Project: https://github.com/modelcontextprotocol/python-sdk
+- License: MIT
+
+## aiohttp
+
+- Dependency: `aiohttp` (see `requirements.txt`)
+- Project: https://github.com/aio-libs/aiohttp
+- License: Apache-2.0
+
+## httpx
+
+- Dependency: `httpx` (see `requirements.txt`)
+- Project: https://github.com/encode/httpx
+- License: BSD-3-Clause
