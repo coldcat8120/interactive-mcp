@@ -109,15 +109,13 @@ Found this project on [ModelScope](https://www.modelscope.cn/mcp/servers/coldcat
    pip install -r requirements.txt
    ```
 
-2. Copy KaTeX assets into `static/katex/` (see [Installation](#installation) above).
-
-3. **Change the `"args"` value in the MCP config shown on ModelScope to an absolute path** pointing to your local `server.py`:
+2. **Change the `"args"` value in the MCP config shown on ModelScope to an absolute path** pointing to your local `server.py`:
 
    ```json
    "args": ["C:\\Users\\you\\interactive-mcp\\server.py"]
    ```
 
-4. Paste the modified config into your MCP client (Cherry Studio, Claude Desktop, Cursor, etc.).
+3. Paste the modified config into your MCP client (Cherry Studio, Claude Desktop, Cursor, etc.).
 
 See [Installation](#installation) for details.
 
