@@ -5,10 +5,9 @@
 
 **中文** | [English](README.md)
 
-![Uploading image.png…]()
-
-
 让任何支持 MCP 的 Agent 框架，**主动弹出一个板书讲解窗口**——用户在独立窗口里边看板书边提问，全程只用一个 LLM。
+
+<img src="docs/screenshot.png" alt="screenshot" width="720">
 
 ## 这是什么
 
