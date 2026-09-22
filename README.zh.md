@@ -72,11 +72,7 @@ cd interactive-mcp
 pip install -r requirements.txt
 ```
 
-### 2. 复制 KaTeX 资源
-
-项目需要 `static/katex/` 目录下的 KaTeX 资源。从 [KaTeX 官网](https://katex.org/) 下载后解压到该目录。
-
-### 3. 在 Agent 框架中配置 MCP
+### 2. 在 Agent 框架中配置 MCP
 
 以 **OpenCode** 为例（`~/.config/opencode/opencode.jsonc`）：
 
