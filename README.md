@@ -74,11 +74,7 @@ cd interactive-mcp
 pip install -r requirements.txt
 ```
 
-### 2. Provide KaTeX assets
-
-The project expects KaTeX assets under `static/katex/`. Download from [katex.org](https://katex.org/) and extract into that directory.
-
-### 3. Register the MCP server
+### 2. Register the MCP server
 
 Example for **OpenCode** (`~/.config/opencode/opencode.jsonc`):
 
